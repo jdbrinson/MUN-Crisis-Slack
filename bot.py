@@ -5,7 +5,10 @@ Python Slack Bot class for use with the pythOnBoarding app
 import os
 import message
 
+from conference import munConference
+
 from slackclient import SlackClient
+
 
 # To remember which teams have authorized your app and what tokens are
 # associated with each team, we can store this information in memory on
@@ -39,6 +42,10 @@ class Bot(object):
         # In a production envrionment you'll likely want to store this more
         # persistantly in  a database.
         self.messages = {}
+        self.creator = "" 
+        self.conference = ""
+        self.committees = {}
+
 
     def auth(self, code):
         """
@@ -251,3 +258,24 @@ class Bot(object):
                                             )
         # Update the timestamp saved on the message object
         message_obj.timestamp = post_message["ts"]
+
+    def create_conference(self, name, conference_id, creator_id, creator_name):
+        
+        self.conference = munConference(name, conference_id, ({creator_id:creator_name}))
+    
+    def create_universe(self, name, universe_id, committee_list, universe_jcc):
+        self.conference.create_universe(name, universe_id)
+        if universe_jcc:
+            for committee_name in committee_list:
+                private_channel = self.client.api_call("groups.create",
+                                                        name=committee_name)
+                self.conference.add_universe_committee(universe_id, 
+                                                       private_channel["group"]["name"],
+                                                       private_channel["group"]["id"])
+        else: #committee is standalone
+            for self.conference.add_universe_committee(universe_id,
+                                                        committee_list["name"],
+                                                        committee_list["id"])
+    def add_universe_committee(self, universe_id, committee_name, committee_id):
+        self.conference.add_universe_committee(universe_id, committee_name, committee_id)
+

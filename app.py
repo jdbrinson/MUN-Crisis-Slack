@@ -6,6 +6,7 @@ A routing layer for the onboarding bot tutorial built using
 import json
 import bot
 from flask import Flask, request, make_response, render_template
+from urlparse import parse_qs
 
 pyBot = bot.Bot()
 slack = pyBot.client
@@ -67,7 +68,7 @@ def _event_handler(event_type, slack_event):
         # Update the onboarding message
         pyBot.update_pin(team_id, user_id)
         return make_response("Welcome message updates with pin", 200,)
-
+    elif event_type
     # ============= Event Type Not Found! ============= #
     # If the event_type does not have a handler
     message = "You have not added an event handler for the %s" % event_type
@@ -114,6 +115,72 @@ def update():
     return make_response("Token updated", 200, {"content_type":
                                                 "application/json"
                                                 })
+@app.route("/init_conference", methods=["GET", "POST"])
+def start_conference():
+    """
+    This route is called by the slash command /init_conference for creating 
+    an integrated conference object with multiple committees that may or may 
+    not interact. This way there will be one slack team for the entire conference
+    """
+    conference_info = parse_qs(request.data)
+    print(conference_info)
+    pybot.create_conference(conference_info["channel_name"], 
+                            conference_info["team_id"],
+                            conference_info["user_id"], 
+                            conference_info["user_name"])
+    return make_response( , 200, )
+
+@app.route("/init_universe", methods=["GET", "POST"])
+def start_committee():
+    """
+    This route is called by the slash command /init_universe for creating
+    a 'universe' in the conference (a stand-alone committee has is one committee
+    in one universe, an X-number-JCC is X committees in one universe).
+    Must be called after a call to/init_conference
+    """
+    if not pybot.conference:
+        #Conference has not been set 
+        return make_response( , 200,)
+    universe_info = parse_qs(request.data)
+    
+    print(universe_info)
+    payload = universe_info["text"]
+    payload = payload.split(" ")
+    committee_list = set()
+    universe_jcc = False
+    for word in payload:
+        if '<#' not in word and '#' in word:
+            word = word[1:21].lower()
+            ok ="_0123456789-abcdefghijklmnopqrstuvwxyz"
+            if all(c in ok for c in word):
+                committee_list.add(word)
+        if 'jcc' in word:
+            universe_jcc = True
+    
+    if not universe_jcc:
+        committee_list.add({"name": universe_info["channel_name"],
+                            "id": universe_info["channel_id"]})
+
+
+    pybot.create_universe(universe_info["channel_name"],
+                          universe_info["channel_id"],
+                          committee_list,
+                          universe_jcc)
+
+
+@app.route("/add_jcc", methods=["GET", "POST"])
+def add_jcc():
+    """ have to include the #channel that is the 
+    base of the jcc"""
+    if not pybot.conference:
+        #conference hasn't been initialized
+
+    committee_info = parse_qs(request.data)
+    payload = committee_info["text"].
+    payload = 
+    pybot.add_universe_committee(
+
+
 
 @app.route("/listening", methods=["GET", "POST"])
 def hears():

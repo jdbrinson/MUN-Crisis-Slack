@@ -35,3 +35,20 @@ class Message(object):
             json_attachments = json_dict["attachments"]
             [self.attachments[i].update(json_attachments[i]) for i
              in range(len(json_attachments))]
+
+class munMessage(object):
+    """
+    Instanciates a message object to create and manage a 
+    welcome to munMessage
+    """
+    def __init__(self):
+        super(munMessage, self).__init__()
+        self.channel = ""
+        self.timestamp = ""
+        self.text = ("Welcome to the Stanford Model UN Conference!")
+        self.emoji_attachment = {}
+        self.pin_attachment = {}
+        self.share_attachment = {}
+        self.attachments = [self.emoji_attachment,
+                            self.pin_attachment,
+                            self.share_attachment]
