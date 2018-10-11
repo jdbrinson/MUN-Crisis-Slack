@@ -102,6 +102,18 @@ def thanks():
     pyBot.auth(code_arg)
     return render_template("thanks.html")
 
+@app.route("/update", methods=["GET", "POST"]) 
+def update():
+    """
+    This route is called by Postman to initialize the Slack client with
+    our access token. Otherwise in development the token never gets updated
+    """
+    token = request.args.get('token')
+    team_id = request.args.get('team_id')
+    pyBot.update_token(team_id, token)
+    return make_response("Token updated", 200, {"content_type":
+                                                "application/json"
+                                                })
 
 @app.route("/listening", methods=["GET", "POST"])
 def hears():
