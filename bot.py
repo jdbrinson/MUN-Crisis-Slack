@@ -72,6 +72,10 @@ class Bot(object):
         # bot token
         self.client = SlackClient(authed_teams[team_id]["bot_token"])
 
+    def update_token(self, team_id, token):
+        authed_teams[team_id] = {"bot_token":token} 
+        self.client = SlackClient(token=token)
+
     def open_dm(self, user_id):
         """
         Open a DM to send a welcome message when a 'team_join' event is
