@@ -68,7 +68,6 @@ def _event_handler(event_type, slack_event):
         # Update the onboarding message
         pyBot.update_pin(team_id, user_id)
         return make_response("Welcome message updates with pin", 200,)
-    elif event_type
     # ============= Event Type Not Found! ============= #
     # If the event_type does not have a handler
     message = "You have not added an event handler for the %s" % event_type
@@ -122,16 +121,21 @@ def start_conference():
     an integrated conference object with multiple committees that may or may 
     not interact. This way there will be one slack team for the entire conference
     """
-    conference_info = parse_qs(request.data)
-    print(conference_info)
-    pybot.create_conference(conference_info["channel_name"], 
+    print(request.form)
+    conference_info = request.form
+    print(conference_info["user_id"])
+    """
+    pybot.create_conference(conference_info["channel_id"],
                             conference_info["team_id"],
                             conference_info["user_id"], 
                             conference_info["user_name"])
-    return make_response( , 200, )
+    """
+    return make_response("conference started", 200, {"content_type":
+                                                    "application/json"
+                                                     })
 
 @app.route("/init_universe", methods=["GET", "POST"])
-def start_committee():
+def start_universe():
     """
     This route is called by the slash command /init_universe for creating
     a 'universe' in the conference (a stand-alone committee has is one committee
@@ -140,22 +144,22 @@ def start_committee():
     """
     if not pybot.conference:
         #Conference has not been set 
-        return make_response( , 200,)
+        return make_response("conference not initialized", 200, {"content_type":
+                                                                 "plain text"})
+    universe_jcc = True
     universe_info = parse_qs(request.data)
     
     print(universe_info)
     payload = universe_info["text"]
+    if "jcc" in payload: universe_jcc = True 
     payload = payload.split(" ")
     committee_list = set()
-    universe_jcc = False
     for word in payload:
         if '<#' not in word and '#' in word:
             word = word[1:21].lower()
             ok ="_0123456789-abcdefghijklmnopqrstuvwxyz"
             if all(c in ok for c in word):
                 committee_list.add(word)
-        if 'jcc' in word:
-            universe_jcc = True
     
     if not universe_jcc:
         committee_list.add({"name": universe_info["channel_name"],
@@ -173,13 +177,30 @@ def add_jcc():
     """ have to include the #channel that is the 
     base of the jcc"""
     if not pybot.conference:
-        #conference hasn't been initialized
-
+        #conference hasn't been initialized    
+        return make_response("conference not initialized", 200, {"content_type":
+                                                                 "plain text"})
+    
+    universe_id  = None
     committee_info = parse_qs(request.data)
-    payload = committee_info["text"].
-    payload = 
-    pybot.add_universe_committee(
-
+    payload = committee_info["text"]
+    if "<#" in payload:
+        payload = payload.split("<#") 
+        universe_id = payload[1].split(">")
+    else:
+        #channel not specified! 
+        return make_response("channel not specified", 200, {"content_type":
+                                                                 "plain text"})
+    
+    if universe_id:
+        pybot.add_universe_committee(universe_id, 
+                                     committee_info["channel_name"], 
+                                     committee_info["channel_id"])
+    else:
+        #could not parse universe_id 
+        
+        return make_response("could not find universe channel", 200, {"content_type":
+                                                                 "plain text"})
 
 
 @app.route("/listening", methods=["GET", "POST"])
@@ -193,7 +214,7 @@ def hears():
     # ============= Slack URL Verification ============ #
     # In order to verify the url of our endpoint, Slack will send a challenge
     # token in a request and check for this token in the response our endpoint
-    # sends back.
+    # sends ba/ck.
     #       For more info: https://api.slack.com/events/url_verification
     if "challenge" in slack_event:
         return make_response(slack_event["challenge"], 200, {"content_type":

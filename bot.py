@@ -272,10 +272,12 @@ class Bot(object):
                 self.conference.add_universe_committee(universe_id, 
                                                        private_channel["group"]["name"],
                                                        private_channel["group"]["id"])
-        else: #committee is standalone
-            for self.conference.add_universe_committee(universe_id,
-                                                        committee_list["name"],
-                                                        committee_list["id"])
+        else:
+            #committee is standalone
+            self.conference.add_universe_committee(universe_id,
+                                                   committee_list["name"],
+                                                   committee_list["id"])
+
     def add_universe_committee(self, universe_id, committee_name, committee_id):
         self.conference.add_universe_committee(universe_id, committee_name, committee_id)
 
