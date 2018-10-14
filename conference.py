@@ -1,9 +1,9 @@
 class munConference(object):
-    def __init__(self, name, conference_id, creator ):
+    def __init__(self, conference, admin):
         super(munConference, self).__init__()
-        self.name = name
-        self.conference_id = conference_id
-        self.webmaster = creator
+        self.name = conference.values()[0]
+        self.conference_id = conference.keys()[0]
+        self.admin = admin
         self.secretariat = {}
         self.directorate = {}
         self.general_staff = {}
@@ -15,30 +15,37 @@ class munConference(object):
         self.all_users = {}
         self.advisors = {}
         self.schools = {}
+        self.channels = {}
 
-    def add_secretariat_member(self, user_name, user_id):
-        self.secretariat[user_id] = user_name 
-        self.all_users[user_id] = user_name
-    
-    def add_directorate_member(self, user_name, user_id):
-        self.directorate[user_id] = user_name
-        self.all_user[user_id] = user_name
+    def add_channels(self, new_channels):
+        self.channels.update(new_channels)
 
-    def add_staff_member(self, user_name, user_id):
-        self.general_staff[user_id] = user_name
-        self.all_users[user_id] = user_name
+    def add_secretariat_member(self, user):
+        self.secretariat[user["id"]] = user["name"] 
+        self.all_users[user["id"]] = user["name"]
+        user["is_staff"] = True
+        
+    def add_directorate_member(self, user):
+        self.directorate[user["id"]] = user["name"]
+        self.all_user[user["id"]] = user["name"]
+        user["is_staff"] = True
 
-    def assign_staff_universe(self, user_id, universe_id):
-        if (    user_id in self.all_staff["general_staff"] or
-                user_id in self.all_staff["secretariat"] or
-                user_id in self.all_staff["directorate"]):
-            
-            if universe_id in self.universes:
-                universe = self.universes[universe_id]
-                universe["staff"][user_id] = self.all_users[user_id]
-                committees = universe["committees"]
-                for committee_id in committees:
-                    committees[committee_id]["staff"][user_id] = self.all_users[user_id]
+    def add_staff_member(self, user):
+        self.general_staff[user["id"]] = user["name"]
+        self.all_users[user["id"]] = user["name"]
+        user["is_staff"] = True
+
+    def assign_staff_universe(self, user, universe):
+        if user["is_staff"]: 
+            """
+            if (    user_id in self.all_staff["general_staff"] or
+                    user_id in self.all_staff["secretariat"] or
+                    user_id in self.all_staff["directorate"]):
+            """    
+            if universe in self.universes.values():
+                universe["staff"][user_id] = user
+                for committee in universe["committees"].values():
+                    committee["staff"][user_id] = user
         else:
             #not a staff member
             return 
@@ -97,6 +104,10 @@ class munConference(object):
                 "delegates": {} 
                 }
         self.schools[school_id] = school
+    
+    def add_admin(self, user_id):
+        self.admin.add(user_id)
+
 
     """
     committee Dictonary = {

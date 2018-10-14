@@ -6,7 +6,7 @@ A routing layer for the onboarding bot tutorial built using
 import json
 import bot
 from flask import Flask, request, make_response, render_template
-from urlparse import parse_qs
+from threading import Thread 
 
 pyBot = bot.Bot()
 slack = pyBot.client
@@ -68,6 +68,24 @@ def _event_handler(event_type, slack_event):
         # Update the onboarding message
         pyBot.update_pin(team_id, user_id)
         return make_response("Welcome message updates with pin", 200,)
+    # ================ potty mouth detector ============ #
+    # scans deleted messages for  
+    elif event_type == "message.im":
+        if "message_deleted" in slack_event["event"]["subtype"]:
+            message = slack_event["event"]["text"]
+            message_set = set(message.split(' ')) 
+            if not message_set.isdisjoint(bad_words):
+                bad_message = {}
+                bad_message["user"] = slack_event["event"]["user"]
+                bad_message["message"] = message
+                bad_message["channel"] = slack_event["channel"]
+                bad_message["time"] = slack_event["ts"]
+                #alert committee staff
+                #alert Secretariat
+                #alert advisor(s)
+                return make_response("bad message", 200,)
+        return make_response("good message", 200,)
+
     # ============= Event Type Not Found! ============= #
     # If the event_type does not have a handler
     message = "You have not added an event handler for the %s" % event_type
@@ -121,18 +139,23 @@ def start_conference():
     an integrated conference object with multiple committees that may or may 
     not interact. This way there will be one slack team for the entire conference
     """
-    print(request.form)
-    conference_info = request.form
-    print(conference_info["user_id"])
-    """
-    pybot.create_conference(conference_info["channel_id"],
-                            conference_info["team_id"],
-                            conference_info["user_id"], 
-                            conference_info["user_name"])
-    """
-    return make_response("conference started", 200, {"content_type":
-                                                    "application/json"
-                                                     })
+    def make_conference(conference_info):
+             
+        admin = {conference_info["user_id"]:conference_info["user_name"]}
+            
+        conference = {conference_info["team_id"]:conference_info["text"]} 
+        pyBot.create_conference(conference, admin, conference_info["response_url"] )
+        
+    thread = Thread(target=make_conference, kwargs={'conference_info':request.form})
+
+     
+    
+    if len(request.form["text"]) > 3: # for minamum MUN 
+        message = "conference " + request.form["text"] + " initializing" 
+        thread.start()
+    else:
+        message = "please supply conference name[/init_conference [name]]"
+    return make_response(message, 200, {"content_type":"application/json"})
 
 @app.route("/init_universe", methods=["GET", "POST"])
 def start_universe():
@@ -141,13 +164,17 @@ def start_universe():
     a 'universe' in the conference (a stand-alone committee has is one committee
     in one universe, an X-number-JCC is X committees in one universe).
     Must be called after a call to/init_conference
+   
+    Slash commands send data as url-form-encoded which gets put into 
+    request.form NOT request.data
+
     """
-    if not pybot.conference:
+    if not pyBot.conference:
         #Conference has not been set 
         return make_response("conference not initialized", 200, {"content_type":
                                                                  "plain text"})
     universe_jcc = True
-    universe_info = parse_qs(request.data)
+    universe_info = request.form
     
     print(universe_info)
     payload = universe_info["text"]
@@ -182,7 +209,7 @@ def add_jcc():
                                                                  "plain text"})
     
     universe_id  = None
-    committee_info = parse_qs(request.data)
+    committee_info = request.form
     payload = committee_info["text"]
     if "<#" in payload:
         payload = payload.split("<#") 
@@ -244,4 +271,4 @@ def hears():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, threaded=True)
