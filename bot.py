@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Python Slack Bot class for use with the pythOnBoarding app
+Python Slack Bot class for use with the MUN app
 """
 import os
 import message
@@ -288,7 +288,17 @@ class Bot(object):
         message_obj.timestamp = post_message["ts"]
 
     def check_existing_channels(self, channel_set, head_honchos):
-        
+        ''' 
+        Searches through the list of channels in the slack to create or co-opt the channel(s)
+        for the mun conference 
+        Returns the set of channels to be used in the Model UN Conference 
+        Paramaters
+        ----------
+        channel_set : 
+            set of channels used for the MUN conference 
+        head_honchos : 
+            set of user IDs that are the folks in charge 
+        '''
         conf_channels = {}
         next_cursor = None 
         while next_cursor is None or next_cursor:
@@ -315,7 +325,15 @@ class Bot(object):
         return conf_channels  
     
     def send_message(self, channel_id, message):
-        
+        '''
+        sends a message to a channel, duh. 
+        Parameters
+        ----------
+        channel_id
+            channel_id of the desired channel
+        message:
+            the message to send.
+        '''    
        message_response = self.client.api_call(
                 "chat.postMessage",
                  channel=channel_id,
@@ -328,6 +346,16 @@ class Bot(object):
            print(message_response)
 
     def invite_missing_members(self, channel_id, head_honchos, existed):
+        '''
+        Parameters
+        ----------
+        channel_id
+            desired channel_id 
+        head_honchos
+            set of user IDs that are administrators.
+        existed
+            bool if this channel was created by the bot or coopted by the bot 
+        '''
         head_honchos.add(self.bot_id)
         if existed:
             next_cursor = None
@@ -350,6 +378,16 @@ class Bot(object):
     
     
     def invite_members(self, channel_id, members):
+        '''
+        invites a set of members to the channel
+        Parameters
+        ----------
+        members
+            set of member IDs
+        channel_id
+            channel_id to add members to 
+
+        '''
         if members:
             response = self.client.api_call(
                             "conversations.invite", 
@@ -362,6 +400,17 @@ class Bot(object):
 
 
     def make_remaining_channels(self, channel_set, private_channels, head_honchos):
+        '''
+        creates channels for the Model UN Conference
+        Parameter
+        ----------
+        channel_set
+            set of channel names to be made 
+        private_channels
+            set of channel names that are supposed to be private
+        head_honchos
+            MUN conference administrators
+        '''
         new_channels = {} 
         for channel in channel_set:
             response = self.client.api_call("conversations.create", 
@@ -382,7 +431,17 @@ class Bot(object):
         return new_channels
     
     def create_conference(self, conference, admin, response_url):
-         
+        '''
+        creates the MUN conference channels 
+        Parameters
+        ----------
+        conference
+            conference name
+        admin
+            list of user IDs 
+        response_url
+            response url 
+        '''
         self.conference = munConference(conference, admin,) 
         head_honchos = set(admin) #guaranteed to exist
         try:
@@ -412,6 +471,20 @@ class Bot(object):
         print("request sent.\nresponse" + r.text) 
     
     def create_universe(self, name, universe_id, committee_list, universe_jcc):
+        '''
+        creates a universe for a committee. A single committee is one committee within one universe.
+        A joint-crisis committee is X committees in one universe
+        Parameters
+        ----------
+        name
+            universe name
+        universe_id
+            unique ID for the universe
+        committee_list
+            list of committees to create
+        universe_jcc
+            bool of whether this universe is a JCC
+        '''
         self.conference.create_universe(name, universe_id)
         if universe_jcc:
             for committee_name in committee_list:
@@ -427,5 +500,16 @@ class Bot(object):
                                                    committee_list["id"])
 
     def add_universe_committee(self, universe_id, committee_name, committee_id):
+        '''
+        adds a committee to a universe
+        Parameters
+        ----------
+        universe_id
+            id for the universe
+        committee_name
+            name of the committee channel
+        committee_id
+            id of the committee channel
+        '''
         self.conference.add_universe_committee(universe_id, committee_name, committee_id)
 
