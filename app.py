@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-A routing layer for the onboarding bot tutorial built using
+A routing layer for the MUN bot built using
 [Slack's Events API](https://api.slack.com/events-api) in Python
 """
 import json
